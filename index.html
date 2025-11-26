@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>10以內加減法學習</title>
+    <style>
+    /* 調整 body 和 quiz-container 讓內容佔滿整個視窗 */
+    body {
+        font-family: Arial, sans-serif;
+        /* 使用 100% 視窗高度和寬度 */
+        width: 100vw; 
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin: 0;
+        background-color: #e6f7ff; /* 換一個柔和的背景色 */
+        user-select: none;
+        overflow: hidden; /* 防止滾動條 */
+    }
+    #quiz-container {
+        width: 95%; /* 佔據更寬 */
+        height: 90%; /* 佔據更高 */
+        max-width: none; /* 移除最大寬度限制 */
+        display: flex; /* 啟用 Flexbox 讓內容置中 */
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        padding: 20px;
+        border-radius: 20px;
+        background-color: #ffffff;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        cursor: pointer;
+        position: relative;
+    }
+
+    /* 數字變大！ */
+    #question-display, #answer-display {
+        font-size: 15vw; /* 使用視窗寬度比例，讓數字隨螢幕大小縮放 */
+        font-weight: 900; /* 更粗的字體 */
+        color: #004d40; /* 深綠色 */
+        line-height: 1.2;
+        transition: opacity 0.3s;
+    }
+    #answer-display {
+        color: #ff9800; /* 答案使用醒目的橘色 */
+        display: none;
+    }
+
+    /* 統計數據，位置不變 */
+    #stats {
+        position: absolute;
+        top: 20px;
+        left: 30px;
+        font-size: 1.5em; /* 統計數字也放大一點 */
+        color: #666;
+        text-align: left;
+        z-index: 10;
+    }
+    #stats strong {
+        font-weight: bold;
+    }
+
+    /* 控制按鈕：增大，並稍微調整位置 */
+    #controls {
+        position: absolute;
+        bottom: 5vh; /* 離底部 5% 視窗高度 */
+        right: 5vw; /* 離右側 5% 視窗寬度 */
+        display: none;
+        /* 讓按鈕排版更優美 */
+        display: flex;
+        gap: 20px;
+    }
+    .control-btn {
+        font-size: 5vw; /* 按鈕圖示也放大 */
+        padding: 15px 30px;
+        border: none;
+        cursor: pointer;
+        border-radius: 15px;
+        transition: transform 0.1s;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    .control-btn:active {
+        transform: scale(0.9);
+    }
+    #correct-btn {
+        background-color: #4CAF50; /* 更深綠色 */
+        color: white;
+    }
+    #incorrect-btn {
+        background-color: #F44336; /* 更深紅色 */
+        color: white;
+    }
+</style>
+</head>
+<body>
+
+    <div id="quiz-container">
+        <div id="stats">
+            <span>總題數: <strong id="total-count">0</strong></span>
+            <span>答對: <strong id="correct-count" style="color: #28a745;">0</strong></span>
+            <span>答錯: <strong id="incorrect-count" style="color: #dc3545;">0</strong></span>
+        </div>
+
+        <div id="question-display">
+            點擊畫面開始！
+        </div>
+
+        <div id="answer-display">
+            </div>
+
+        <div id="controls">
+            <button id="correct-btn" class="control-btn">✔️</button>
+            <button id="incorrect-btn" class="control-btn">❌</button>
+        </div>
+    </div>
+
+    <script>
+        let currentQuestion = { question: "", answer: 0, isAnswerShown: false };
+        let stats = { total: 0, correct: 0, incorrect: 0 };
+
+        const quizContainer = document.getElementById('quiz-container');
+        const questionDisplay = document.getElementById('question-display');
+        const answerDisplay = document.getElementById('answer-display');
+        const controls = document.getElementById('controls');
+        const correctBtn = document.getElementById('correct-btn');
+        const incorrectBtn = document.getElementById('incorrect-btn');
+
+        const totalCount = document.getElementById('total-count');
+        const correctCount = document.getElementById('correct-count');
+        const incorrectCount = document.getElementById('incorrect-count');
+
+        // --- 核心函式：隨機生成題目 ---
+        function generateNewQuestion() {
+            // 隨機決定運算符號 (+ 或 -)
+            const operator = Math.random() < 0.5 ? '+' : '-';
+            
+            let num1, num2, answer;
+
+            if (operator === '+') {
+                // 加法: num1 + num2 = answer <= 10
+                // 確保 num1 和 num2 都在 [0, 10] 範圍，且總和不超過 10
+                num1 = Math.floor(Math.random() * 11); // 0-10
+                num2 = Math.floor(Math.random() * (11 - num1)); // 確保 num1 + num2 <= 10
+                answer = num1 + num2;
+            } else {
+                // 減法: num1 - num2 = answer >= 0
+                // 確保 num1 <= 10，num2 <= num1，且答案 >= 0
+                num1 = Math.floor(Math.random() * 11); // 0-10 (被減數)
+                num2 = Math.floor(Math.random() * (num1 + 1)); // 0-num1 (減數)
+                answer = num1 - num2;
+            }
+
+            // 格式化題目字串
+            const questionStr = `${num1} ${operator} ${num2} = ?`;
+
+            // 更新目前的題目物件
+            currentQuestion = { 
+                question: questionStr, 
+                answer: answer, 
+                isAnswerShown: false 
+            };
+            
+            // 顯示題目，隱藏答案和控制按鈕
+            questionDisplay.textContent = questionStr;
+            questionDisplay.style.display = 'block';
+            answerDisplay.style.display = 'none';
+            controls.style.display = 'none';
+            quizContainer.style.cursor = 'pointer'; // 恢復點擊提示
+
+            // 總題數計數
+            stats.total++;
+            updateStatsDisplay();
+        }
+
+        // --- 核心函式：切換顯示答案 ---
+        function toggleAnswer() {
+            if (!currentQuestion.question) {
+                // 第一次點擊，生成第一道題
+                generateNewQuestion();
+                return;
+            }
+
+            if (!currentQuestion.isAnswerShown) {
+                // 從題目切換到答案
+                answerDisplay.textContent = `${currentQuestion.answer}`;
+                questionDisplay.style.display = 'none';
+                answerDisplay.style.display = 'block';
+                controls.style.display = 'flex'; // 顯示打勾打叉按鈕
+                currentQuestion.isAnswerShown = true;
+                quizContainer.style.cursor = 'default'; // 移除點擊提示
+            } 
+            // 如果答案已顯示，點擊不執行任何操作，必須點擊控制按鈕進行記錄和下一題。
+        }
+
+        // --- 核心函式：記錄結果並進入下一題 ---
+        function recordResult(isCorrect) {
+            if (isCorrect) {
+                stats.correct++;
+                console.log(`題目: ${currentQuestion.question} 答案: ${currentQuestion.answer} - 答對!`);
+            } else {
+                stats.incorrect++;
+                console.log(`題目: ${currentQuestion.question} 答案: ${currentQuestion.answer} - 答錯!`);
+            }
+            
+            updateStatsDisplay();
+            generateNewQuestion(); // 生成下一題
+        }
+
+        // --- 輔助函式：更新統計數字 ---
+        function updateStatsDisplay() {
+            totalCount.textContent = stats.total;
+            correctCount.textContent = stats.correct;
+            incorrectCount.textContent = stats.incorrect;
+        }
+
+        // --- 事件監聽器：整個畫面點擊切換答案 ---
+        quizContainer.addEventListener('click', () => {
+             // 確保點擊按鈕時不會觸發 toggleAnswer
+            if (currentQuestion.isAnswerShown) {
+                // 如果是答案狀態，點擊中央區域不做事，必須點擊按鈕。
+                return;
+            }
+            toggleAnswer();
+        });
+
+        // --- 事件監聽器：打勾按鈕 (答對) ---
+        correctBtn.addEventListener('click', (event) => {
+            event.stopPropagation(); // 阻止事件冒泡到 quizContainer
+            recordResult(true);
+        });
+
+        // --- 事件監聽器：打叉按鈕 (答錯) ---
+        incorrectBtn.addEventListener('click', (event) => {
+            event.stopPropagation(); // 阻止事件冒泡到 quizContainer
+            recordResult(false);
+        });
+
+        // 初始化：首次載入頁面時，顯示開始提示
+        updateStatsDisplay(); // 初始化統計數字為 0
+        // 不需要立即生成題目，等待第一次點擊 'quiz-container' 來啟動
+    </script>
+
+</body>
+</html>
